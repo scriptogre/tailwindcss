@@ -1,0 +1,45 @@
+name: Auto Build TailwindCSS Image
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # daily at 00:00 UTC
+  workflow_dispatch:     # manual trigger via `Actions` tab
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository (containing the Dockerfile)
+        uses: actions/checkout@v4
+
+      - name: Authenticate with GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: get-latest-release
+        name: Fetch latest TailwindCSS release
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
+        with:
+          repository: tailwindlabs/tailwindcss
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/scriptogre/tailwindcss:latest
+            ghcr.io/scriptogre/tailwindcss:${{ steps.get-latest-release.outputs.release }}
+          build-args: |
+            TAILWINDCSS_VERSION=${{ steps.get-latest-release.outputs.release }}

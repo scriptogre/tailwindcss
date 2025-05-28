@@ -1,40 +1,33 @@
-# TailwindCSS Docker Image
+# TailwindCSS Docker
 
-A minimal Docker image for the Tailwind CSS standalone CLI that bundles `tini` for proper signal forwarding.
+A dead simple way to run [Tailwind CSS](https://tailwindcss.com/) from a Docker container. 
 
-## Usage Example
+No more **Node.JS**. No more **manual downloads of the CLI**.
 
-Pull and run the image:
+1. Create `input.css` in your project:
+    ```css
+    @import 'tailwindcss';
+    ``` 
+2. Create `docker-compose.yml` in your project:
+    ```yaml
+    services:
+      tailwindcss:
+        # You can also use pinned versions, e.g. `:4.1.7`
+        image: ghcr.io/scriptogre/tailwindcss:latest
+        volumes:
+          - .:/app
+        command: -i ./input.css -o ./output.css --watch
+    ```
 
+3.  Or run `docker run` command:
 ```bash
-docker run \
-  --init \
-  --rm \
-  --volume "$(pwd)":/code \
-  ghcr.io/scriptogre/tailwindcss:latest \
-    -i ./static/css/input.css \
-    -o ./static/css/output.css \
-    --watch=always
+docker run \ 
+  -v "$(pwd)":/app \
+  ghcr.io/scriptogre/tailwindcss:latest \ 
+  -i ./input.css -o ./output.css --watch
 ```
 
-Or with Docker Compose:
 
-```yaml
-services:
-   tailwindcss:
-      image: ghcr.io/scriptogre/tailwindcss:latest
-      volumes:
-         - .:/code
-      command: [
-         "-i", "./static/css/input.css",
-         "-o", "./static/css/output.css",
-         "--watch=always"
-      ]
-      init: true
-```
-
-## Notes
-
-- The final image is based on `debian:bullseye-slim` and includes the `tailwindcss` CLI.
-- The container expects a bind mount from the host to `/code`, where your Tailwind CSS files are located.
-- Use `init: true` in docker-compose for proper signal handling.
+### **Notes:**
+- Make sure you mount all source files (`*.html`, `*.css`, `*.js`, …) to `/app`, so Tailwind’s watcher can see them within the container.
+- The `ghcr.io/scriptogre/tailwindcss:latest` image is rebuilt daily to track the newest Tailwind CSS release.

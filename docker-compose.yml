@@ -1,0 +1,7 @@
+services:
+  tailwindcss:
+    image: ghcr.io/scriptogre/tailwindcss:latest
+    tty: true
+    volumes:
+      - .:/app
+    command: ["-i", "./input.css", "-o", "./output.css", "--watch"]
