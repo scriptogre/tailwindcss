@@ -32,6 +32,16 @@ jobs:
         with:
           repository: tailwindlabs/tailwindcss
 
+      - id: strip-v
+        name: Strip leading “v” from version
+        run: |
+          # grab the raw output (e.g. "v4.1.7")
+          vtag="${{ steps.get-latest-release.outputs.release }}"
+          # remove one leading “v”
+          clean_vtag="${vtag#v}"
+          # expose it as an output
+          echo "version_no_v=${clean_vtag}" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
@@ -40,6 +50,6 @@ jobs:
           push: true
           tags: |
             ghcr.io/scriptogre/tailwindcss:latest
-            ghcr.io/scriptogre/tailwindcss:${{ steps.get-latest-release.outputs.release }}
+            ghcr.io/scriptogre/tailwindcss:${{ steps.strip-v.outputs.version_no_v }}
           build-args: |
-            TAILWINDCSS_VERSION=${{ steps.get-latest-release.outputs.release }}
+            TAILWINDCSS_VERSION=${{ steps.strip-v.outputs.version_no_v }}

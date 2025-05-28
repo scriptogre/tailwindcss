@@ -12,7 +12,7 @@ RUN set -eux; \
     ARCH="${platform#*/}"; \
     [ "$ARCH" = "amd64" ] && ARCH=x64; \
     [ "$ARCH" = "aarch64" ] && ARCH=arm64; \
-    url="https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWINDCSS_VERSION}/tailwindcss-${OS}-${ARCH}${TARGETVARIANT}"; \
+    url="https://github.com/tailwindlabs/tailwindcss/releases/download/v${TAILWINDCSS_VERSION#v}/tailwindcss-${OS}-${ARCH}${TARGETVARIANT}"; \
     curl -fSL -o /tmp/tailwindcss "$url"; \
     chmod +x /tmp/tailwindcss
 
