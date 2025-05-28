@@ -1,6 +1,6 @@
 rebuild release_version:
     docker build \
-        --build-arg TAILWINDCSS_VERSION={{release_version}} \
+        --build-arg TAILWINDCSS_VERSION=v{{release_version}} \
         -t ghcr.io/scriptogre/tailwindcss:{{release_version}} \
         -t ghcr.io/scriptogre/tailwindcss:latest \
         .
