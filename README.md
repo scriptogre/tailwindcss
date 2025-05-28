@@ -1,4 +1,4 @@
-# TailwindCSS Docker
+# TailwindCSS in Docker
 
 A dead simple way to run [Tailwind CSS](https://tailwindcss.com/) from a Docker container. 
 
