@@ -20,12 +20,10 @@ No more **Node.JS**. No more **manual downloads of the CLI**.
         command: -i ./input.css -o ./output.css --watch
     ```
 
-3.  Or run `docker run` command (note the `-t` flag is required for watch mode):
+3. Or run `docker run` command (note the `-t` flag is required for watch mode):
 ```bash
-docker run -t \
-  -v "$(pwd)":/app \
-  ghcr.io/scriptogre/tailwindcss:latest \
-  -i ./input.css -o ./output.css --watch
+docker run -t -v "$(pwd)":/app \
+  ghcr.io/scriptogre/tailwindcss:latest -i ./input.css -o ./output.css --watch
 ```
 
 ### **Watch Mode Requirement**

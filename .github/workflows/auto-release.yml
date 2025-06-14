@@ -1,4 +1,4 @@
-name: Auto Build TailwindCSS Image
+name: Auto Release
 
 on:
   schedule:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       packages: write
       attestations: write
       id-token: write
@@ -26,6 +26,8 @@ jobs:
 
       - name: Check out code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # fetch all tags for release checking
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -40,17 +42,32 @@ jobs:
         with:
           repository: tailwindlabs/tailwindcss
 
-      - name: Strip leading “v” from version
+      - name: Strip leading "v" from version
         id: strip-v
         run: |
           # grab the raw output (e.g. "v4.1.7")
           vtag="${{ steps.get-latest-release.outputs.release }}"
-          # remove one leading “v”
+          # remove one leading "v"
           clean_vtag="${vtag#v}"
           # expose it as an output
           echo "version_no_v=${clean_vtag}" >> $GITHUB_OUTPUT
+          echo "full_version=${vtag}" >> $GITHUB_OUTPUT
+
+      - name: Check if release already exists
+        id: check-release
+        run: |
+          # Check if we already have a release for this version
+          version="${{ steps.strip-v.outputs.full_version }}"
+          if git tag -l | grep -q "^${version}$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release ${version} already exists, skipping build"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release ${version} does not exist, will build and create"
+          fi
 
       - name: Build & push multi-arch
+        if: steps.check-release.outputs.exists == 'false'  # Only build if new version
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -62,3 +79,49 @@ jobs:
             ghcr.io/scriptogre/tailwindcss:${{ steps.strip-v.outputs.version_no_v }}
           build-args: |
             TAILWINDCSS_VERSION=${{ steps.strip-v.outputs.version_no_v }}
+
+      - name: Create and push tag
+        if: steps.check-release.outputs.exists == 'false'
+        run: |
+          version="${{ steps.strip-v.outputs.full_version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${version}" -m "Auto-release for TailwindCSS ${version}"
+          git push origin "${version}"
+
+      - name: Create GitHub Release
+        if: steps.check-release.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.strip-v.outputs.full_version }}
+          name: ${{ steps.strip-v.outputs.full_version }}
+          body: |
+            Automatic release for TailwindCSS ${{ steps.strip-v.outputs.full_version }}
+            
+            1. Create `input.css` in your project:
+            ```css
+            @import 'tailwindcss';
+            ``` 
+            
+            2. Create `docker-compose.yml` in your project:
+            ```yaml
+            services:
+              tailwindcss:
+                image: ghcr.io/scriptogre/tailwindcss:${{ steps.strip-v.outputs.version_no_v }}
+                tty: true  # Required for watch mode
+                volumes:
+                  - .:/app
+                command: -i ./input.css -o ./output.css --watch
+            ```
+            
+            3. Or run `docker run` command (note the `-t` flag is required for watch mode):
+            ```bash
+            docker run -t -v "$(pwd)":/app \
+              ghcr.io/scriptogre/tailwindcss:${{ steps.strip-v.outputs.version_no_v }} -i ./input.css -o ./output.css --watch
+            ```
+
+            Container available at [ghcr.io/scriptogre/tailwindcss:${{ steps.strip-v.outputs.version_no_v }}](https://ghcr.io/scriptogre/tailwindcss:${{ steps.strip-v.outputs.version_no_v }})
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
