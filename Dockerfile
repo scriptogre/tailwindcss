@@ -24,10 +24,10 @@ ARG TAILWINDCSS_VERSION
 
 # Image metadata
 LABEL org.opencontainers.image.title="Tailwind CSS CLI Docker Image"
-LABEL org.opencontainers.image.description="Minimal Docker image packaging the Tailwind CSS standalone CLI"
+LABEL org.opencontainers.image.description="Run TailwindCSS CLI as a Docker container."
 LABEL org.opencontainers.image.documentation="https://github.com/scriptogre/tailwindcss-docker#readme"
 LABEL org.opencontainers.image.source="https://github.com/scriptogre/tailwindcss-docker"
-LABEL org.opencontainers.image.url="https://github.com/scriptogre/tailwindcss"
+LABEL org.opencontainers.image.url="https://https://github.com/scriptogre/tailwindcss-docker"
 LABEL org.opencontainers.image.version="${TAILWINDCSS_VERSION}"
 LABEL org.opencontainers.image.authors="scriptogre"
 
