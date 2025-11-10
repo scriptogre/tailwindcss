@@ -2,16 +2,22 @@
 
 ## Summary
 
-This PR extends TailwindCSS's timing utilities (`duration-*`, `delay-*`, `ease-*`) to apply to **both CSS transitions AND animations**, not just transitions. This addresses a long-standing community pain point dating back to 2021.
+This PR extends TailwindCSS's timing utilities (`duration-*`, `delay-*`, `ease-*`) to apply to **both CSS transitions AND animations**, not just transitions. It also adds complementary `animation-*` utilities to enable full customization of existing `animate-*` classes (like `animate-spin`, `animate-bounce`, etc.).
 
 ## Problem Statement
 
-Currently, `duration-*`, `delay-*`, and `ease-*` utilities **ONLY** apply to `transition-*` properties. Users who want to control animation timing have been forced to use workarounds:
+Currently, `duration-*`, `delay-*`, and `ease-*` utilities **ONLY** apply to `transition-*` properties. Developers who want to customize the built-in `animate-*` utilities (like `animate-spin`, `animate-bounce`) cannot do so without workarounds:
 
-- Arbitrary values: `animate-[bounce_1s_infinite_100ms]` (verbose and hacky)
-- Custom plugins
-- Inline styles
-- Custom CSS
+```html
+<!-- Before: Cannot customize animate-* timing -->
+<div class="animate-spin">Default 1s spin</div>
+<div class="duration-2000">Does nothing to animations!</div>
+
+<!-- Forced to use verbose arbitrary values -->
+<div class="animate-[spin_2s_linear_infinite]">Custom timing</div>
+
+<!-- Or stop animation after one cycle? Impossible without custom CSS! -->
+```
 
 This has been **consistently requested** by the community since 2021, with multiple GitHub issues highlighting the frustration.
 
@@ -40,18 +46,23 @@ This has been **consistently requested** by the community since 2021, with multi
 
 ### Core Changes
 
-#### 1. Unified Timing Utilities (Breaking Change - Enhancement)
+#### 1. Unified Timing Utilities - Now Apply to Both Transitions AND Animations
 
 The primary timing utilities now set **BOTH** transition AND animation properties:
 
 ```html
-<!-- Before: Only affected transitions -->
-<div class="duration-300 hover:scale-110">Only transition works</div>
+<!-- ✅ Now works: duration/delay/ease affect animations! -->
+<div class="animate-spin duration-2000 delay-500 ease-in-out">
+  Custom spin timing!
+</div>
 
-<!-- After: Affects both transitions AND animations -->
-<div class="duration-300 animate-bounce">Both work! 🎉</div>
-<div class="delay-100 animate-pulse">Animations finally have delay!</div>
-<div class="ease-in-out animate-spin">Animations have easing!</div>
+<div class="animate-bounce duration-500">
+  Faster bounce!
+</div>
+
+<div class="animate-pulse ease-linear">
+  Linear pulse instead of cubic-bezier
+</div>
 ```
 
 **Generated CSS:**
@@ -80,9 +91,9 @@ For scenarios where an element has both transitions AND animations with differen
 
 ```html
 <!-- Different timing for transition vs animation -->
-<div class="transition-duration-300 animation-duration-1000
-            animate-pulse hover:scale-110">
-  Transition in 300ms, animation loops every 1s
+<div class="animate-pulse hover:scale-110
+            transition-duration-200 animation-duration-2000">
+  Fast hover transition, slow pulse animation
 </div>
 ```
 
@@ -94,23 +105,23 @@ For scenarios where an element has both transitions AND animations with differen
 - `animation-delay-*` - Only sets `animation-delay`
 - `animation-ease-*` - Only sets `animation-timing-function`
 
-#### 3. New Animation Composition Utilities
+#### 3. Animation Control Utilities - Customize Built-in Animations
 
-Enables composing animations from individual properties:
+Enable full control over CSS animation properties to augment `animate-*` classes:
 
 ```html
-<!-- Compose custom animations -->
-<div class="animation-name-fade-in duration-1000 animate-once animate-fill-forwards">
-  Fade in once, stay visible
+<!-- Stop animation after one cycle -->
+<div class="animate-bounce animation-once animation-forwards">
+  Bounces once, stays visible
 </div>
 
-<!-- Reverse a built-in animation -->
-<div class="animate-bounce animate-reverse">
-  Bounces upward!
+<!-- Reverse built-in animation -->
+<div class="animate-spin animation-reverse">
+  Spins backward!
 </div>
 
-<!-- Alternate back and forth -->
-<div class="animate-pulse animate-alternate animate-twice">
+<!-- Alternate direction -->
+<div class="animate-pulse animation-alternate animation-twice">
   Pulses in and out twice
 </div>
 ```
@@ -119,69 +130,84 @@ Enables composing animations from individual properties:
 
 **Animation Iteration Count:**
 - `animation-count-*` - `animation-count-3`, `animation-count-[7]`, `animation-count-infinite`
-- Shortcuts: `animate-once`, `animate-twice`, `animate-thrice`, `animate-infinite`
+- Shortcuts: `animation-once`, `animation-twice`, `animation-thrice`, `animation-infinite`
 
 **Animation Direction:**
-- `animate-normal` - Play forward (default)
-- `animate-reverse` - Play backward
-- `animate-alternate` - Alternate direction each cycle
-- `animate-alternate-reverse` - Alternate starting backward
+- `animation-normal` - Play forward (default)
+- `animation-reverse` - Play backward
+- `animation-alternate` - Alternate direction each cycle
+- `animation-alternate-reverse` - Alternate starting backward
 
 **Animation Fill Mode:**
-- `animate-fill-none` - Don't apply styles outside animation
-- `animate-fill-forwards` - Retain final keyframe styles
-- `animate-fill-backwards` - Apply initial keyframe styles before start
-- `animate-fill-both` - Apply both forwards and backwards
+- `animation-none` - Don't apply styles outside animation
+- `animation-forwards` - Retain final keyframe styles
+- `animation-backwards` - Apply initial keyframe styles before start
+- `animation-both` - Apply both forwards and backwards
 
-**Animation Name:**
-- `animation-name-*` - `animation-name-spin`, `animation-name-[fade-in]`, `animation-name-none`
+## Use Cases & Examples
 
-## Examples
+### 1. Basic: Customize Built-in Animations
 
-### Basic Usage
 ```html
-<!-- Simple: duration/delay/ease now work with animations -->
-<div class="animate-bounce duration-500 delay-100 ease-in-out">
-  Customized bounce animation
+<!-- Before: Stuck with default timing -->
+<div class="animate-spin">1s spin, can't change it</div>
+
+<!-- After: Full control -->
+<div class="animate-spin duration-3000 ease-linear">
+  3-second linear spin
 </div>
 ```
 
-### Composing Animations
+### 2. Stop After N Cycles
+
 ```html
-<!-- Build animation from scratch -->
-<div class="animation-name-fade-in duration-1000 animate-once
-            animate-fill-forwards ease-in">
-  Fade in elegantly
+<!-- Before: Impossible without custom CSS -->
+<div class="animate-bounce">Bounces forever...</div>
+
+<!-- After: Simple utilities -->
+<div class="animate-bounce animation-once animation-forwards">
+  Bounces once, stops at final position
 </div>
 ```
 
-### Mixed Timing (Edge Case)
+### 3. Reverse Built-in Animations
+
 ```html
-<!-- Different timing for transition vs animation -->
-<div class="transition-duration-200 animation-duration-2000
-            animate-spin hover:bg-blue-500">
-  Fast color transition, slow spin
+<!-- Spin backward -->
+<div class="animate-spin animation-reverse">
+  Counter-clockwise spin
 </div>
 ```
 
-### Staggered Animations (Previously Painful)
+### 4. Staggered Animations (Previously Painful)
+
 ```html
-<!-- Before: Needed custom CSS or arbitrary values -->
+<!-- Before: Verbose arbitrary values -->
 <div class="animate-[fade-in_1s_ease-in_0ms]">Item 1</div>
 <div class="animate-[fade-in_1s_ease-in_100ms]">Item 2</div>
 <div class="animate-[fade-in_1s_ease-in_200ms]">Item 3</div>
 
-<!-- After: Clean and composable -->
-<div class="animation-name-fade-in duration-1000 ease-in delay-0">Item 1</div>
-<div class="animation-name-fade-in duration-1000 ease-in delay-100">Item 2</div>
-<div class="animation-name-fade-in duration-1000 ease-in delay-200">Item 3</div>
+<!-- After: Clean composition -->
+<div class="animate-fade-in duration-1000 ease-in delay-0">Item 1</div>
+<div class="animate-fade-in duration-1000 ease-in delay-100">Item 2</div>
+<div class="animate-fade-in duration-1000 ease-in delay-200">Item 3</div>
 ```
 
-### View Transitions Ready
+### 5. Yo-yo Effect
+
 ```html
-<!-- Enables future View Transitions API support -->
-<div class="vt-name-hero duration-300 ease-out">
-  Hero element with view transition
+<div class="animate-pulse animation-alternate animation-count-4">
+  Pulses in, then out, then in, then out (4 times total)
+</div>
+```
+
+### 6. Mixed Timing (Edge Case)
+
+```html
+<!-- Different timing for transition vs animation -->
+<div class="animate-spin hover:bg-blue-500
+            transition-duration-200 animation-duration-3000">
+  Fast color change, slow spin
 </div>
 ```
 
@@ -191,12 +217,13 @@ Enables composing animations from individual properties:
 1. **`packages/tailwindcss/src/utilities.ts`**
    - Modified `duration`, `delay`, `ease` utilities to set both transition and animation properties
    - Added specific `transition-*` and `animation-*` utilities for edge cases
-   - Added new animation composition utilities
-   - **Lines changed:** ~90 new lines
+   - Added animation control utilities (`animation-count-*`, `animation-once/twice/thrice/infinite`, `animation-normal/reverse/alternate/alternate-reverse`, `animation-none/forwards/backwards/both`)
+   - **Lines changed:** ~75 new lines
 
 2. **`packages/tailwindcss/src/utilities.test.ts`**
    - Updated existing tests for `duration`, `delay`, `ease` to expect animation properties
    - Added comprehensive tests for all new utilities
+   - Added integration test showing utilities work together with `animate-*` classes
    - **Lines changed:** ~230 new lines
 
 ### Design Decisions
@@ -207,10 +234,17 @@ This matches user expectations. When users write `duration-300`, they intuitivel
 #### Why Provide Specific Utilities?
 For the 1% edge case where an element has both a transition (e.g., `hover:scale-110`) AND an animation (e.g., `animate-pulse`) that need different timing. Without specific utilities, this would be impossible.
 
-#### Why Not Use `animate-duration-*` Instead of `animation-duration-*`?
-- `animate-*` is already used for the `animation` shorthand property (e.g., `animate-spin`)
-- `animation-*` is consistent with the CSS property names
-- Avoids confusion between `animate-spin` and `animate-duration-300`
+#### Why Use `animation-*` prefix consistently?
+- **Consistency**: All new animation utilities use `animation-*` prefix
+- **No conflict**: `animate-*` is reserved for the existing shorthand utilities (`animate-spin`, `animate-bounce`, etc.)
+- **Clear semantics**: `animation-duration-*` maps directly to CSS property `animation-duration`
+- **Future-proof**: Follows CSS property naming convention
+
+#### Why No `animation-name-*` utility?
+- You can't create `@keyframes` inline with utilities
+- Setting animation name alone isn't useful without keyframes
+- `animate-*` shorthand already handles this (e.g., `animate-spin` sets name + duration + iteration)
+- Focus is on **customizing** existing animations, not creating new ones
 
 ## Breaking Changes
 
@@ -225,6 +259,7 @@ No migration needed. Users can start using the new capabilities immediately:
 
 <!-- New capabilities available -->
 <div class="duration-300 animate-bounce">Now also works!</div>
+<div class="animate-spin animation-once">Stop after one spin!</div>
 ```
 
 ## Testing
@@ -236,7 +271,7 @@ No migration needed. Users can start using the new capabilities immediately:
 - ✅ Added tests for `animation-count-*` and shortcuts
 - ✅ Added tests for animation direction utilities
 - ✅ Added tests for animation fill mode utilities
-- ✅ Added tests for `animation-name-*` utility
+- ✅ Added integration test showing utilities work with `animate-*` classes
 
 All tests include:
 - Named values (e.g., `duration-300`)
@@ -248,16 +283,11 @@ All tests include:
 
 This PR lays the groundwork for:
 
-1. **View Transitions API Support** - The community has requested this (issue #11669). With unified timing utilities, implementing View Transitions utilities becomes trivial:
-   ```css
-   @utility vt-name-* { view-transition-name: --value(...); }
-   @custom-variant vt-old { ::view-transition-old(*) { @slot; } }
-   @custom-variant vt-new { ::view-transition-new(*) { @slot; } }
-   ```
+1. **View Transitions API Support** - The community has requested this (issue #11669). With unified timing utilities, implementing View Transitions utilities becomes straightforward.
 
-2. **Keyframe Utilities** - Potential for `@keyframes` utilities in the future
+2. **Custom Keyframes** - Potential for `@keyframes` utilities in the future
 
-3. **Timeline Utilities** - When CSS Scroll-Driven Animations become stable
+3. **Scroll-Driven Animations** - When CSS Scroll-Driven Animations become stable
 
 ## Related Issues
 
@@ -270,16 +300,19 @@ This PR lays the groundwork for:
 - [ ] Update https://tailwindcss.com/docs/transition-duration to mention it now applies to animations
 - [ ] Update https://tailwindcss.com/docs/transition-delay to mention it now applies to animations
 - [ ] Update https://tailwindcss.com/docs/transition-timing-function to mention it now applies to animations
-- [ ] Add new page documenting animation composition utilities
+- [ ] Add new page documenting animation control utilities
+- [ ] Add examples showing customization of `animate-*` classes
 
 ## Checklist
 
 - [x] Implementation complete
+- [x] Consistent naming (`animation-*` prefix throughout)
 - [x] Tests added/updated
 - [x] Design document created
+- [x] Integration test showing utilities work with `animate-*` classes
 - [x] PR description written with community context
-- [ ] Run full test suite (blocked by npm install issue)
-- [ ] Documentation updates (separate PR likely needed)
+- [ ] Run full test suite
+- [ ] Documentation updates (likely separate PR)
 
 ---
 
@@ -287,6 +320,10 @@ This PR lays the groundwork for:
 
 This PR embodies TailwindCSS's core philosophy:
 
-> "Design systems, not pages. Empower developers with the primitives they need to build anything."
+> "Provide the primitives developers need to build anything."
 
-By making timing utilities work universally, we remove arbitrary constraints and give developers the building blocks they intuitively expect. The result: **less friction, more creativity, cleaner code**.
+By making timing utilities work universally and adding granular animation controls, we remove arbitrary constraints and give developers the building blocks they intuitively expect. The result: **less friction, more creativity, cleaner code**.
+
+### Why This Matters
+
+For 4+ years, developers have been frustrated that `duration-300 animate-spin` doesn't work as expected. This PR finally makes the obvious thing work, while maintaining backward compatibility and adding powerful new composition capabilities.

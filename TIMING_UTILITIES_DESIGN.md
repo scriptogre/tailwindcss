@@ -2,11 +2,14 @@
 
 ## Problem Statement
 
-Currently, TailwindCSS v4's timing utilities (`duration-*`, `delay-*`, `ease-*`) ONLY apply to CSS transitions, not animations. This has been a pain point since 2021 (GitHub issue #3378), forcing developers to use workarounds like:
-- Arbitrary values: `animate-[bounce_1s_infinite_100ms]` (hacky)
-- Custom plugins
-- Inline styles
-- Custom CSS
+Currently, TailwindCSS v4's timing utilities (`duration-*`, `delay-*`, `ease-*`) ONLY apply to CSS transitions, not animations. This has been a pain point since 2021 (GitHub issue #3378), forcing developers to use workarounds when they want to customize built-in `animate-*` utilities like `animate-spin` or `animate-bounce`.
+
+Developers cannot:
+- Change the duration of `animate-spin` without verbose arbitrary values
+- Add delays to animations
+- Stop animations after N cycles
+- Reverse animations
+- Use different easing functions with animations
 
 ## Community Evidence
 
@@ -23,7 +26,7 @@ Currently, TailwindCSS v4's timing utilities (`duration-*`, `delay-*`, `ease-*`)
 ## Proposed Solution
 
 ### Core Philosophy
-Make `duration-*`, `delay-*`, and `ease-*` apply to BOTH transitions AND animations by default (99% use case), while providing specific utilities for edge cases where different values are needed.
+Make `duration-*`, `delay-*`, and `ease-*` apply to BOTH transitions AND animations by default (99% use case), while providing specific utilities for edge cases where different values are needed. Add complementary `animation-*` utilities to enable full control over CSS animation properties.
 
 ### API Design
 
@@ -32,21 +35,31 @@ These utilities set BOTH transition AND animation properties:
 
 ```css
 /* duration-* sets both transition-duration AND animation-duration */
-duration-100
-duration-300
-duration-[2s]
+.duration-300 {
+  --tw-duration: 300ms;
+  transition-duration: 300ms;
+  animation-duration: 300ms;  /* NEW */
+}
 
 /* delay-* sets both transition-delay AND animation-delay */
-delay-100
-delay-500
-delay-[200ms]
+.delay-100 {
+  transition-delay: 100ms;
+  animation-delay: 100ms;  /* NEW */
+}
 
 /* ease-* sets both transition-timing-function AND animation-timing-function */
-ease-in
-ease-out
-ease-in-out
-ease-linear
-ease-[cubic-bezier(0.4,0,0.2,1)]
+.ease-in-out {
+  --tw-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);  /* NEW */
+}
+```
+
+**Usage:**
+```html
+<div class="animate-spin duration-2000 ease-linear">
+  2-second linear spin
+</div>
 ```
 
 #### 2. Specific Utilities (Edge Cases)
@@ -64,44 +77,66 @@ animation-delay-*
 animation-ease-*
 ```
 
-**Naming Decision:** Use `animation-*` prefix for consistency with CSS spec, not `animate-*` (which is reserved for the `animation` shorthand property).
+**Usage:**
+```html
+<div class="animate-pulse hover:scale-110
+            transition-duration-200 animation-duration-2000">
+  Fast hover, slow pulse
+</div>
+```
 
-#### 3. New Animation-Specific Utilities
+#### 3. Animation Control Utilities
+
+Enable customization of built-in `animate-*` classes:
 
 ##### Animation Iteration Count
 ```css
-animation-count-*         /* animation-count-3 -> animation-iteration-count: 3 */
-animation-count-infinite  /* shorthand */
-animation-count-[7]       /* arbitrary */
+animation-count-*         /* animation-count-3 -> 3 cycles */
+animation-count-infinite  /* infinite cycles */
+animation-count-[7]       /* arbitrary value */
 
 /* DX-friendly shortcuts */
-animate-once              /* animation-iteration-count: 1 */
-animate-twice             /* animation-iteration-count: 2 */
-animate-thrice            /* animation-iteration-count: 3 */
-animate-infinite          /* animation-iteration-count: infinite */
+animation-once            /* 1 cycle */
+animation-twice           /* 2 cycles */
+animation-thrice          /* 3 cycles */
+animation-infinite        /* infinite cycles */
+```
+
+**Usage:**
+```html
+<div class="animate-bounce animation-once animation-forwards">
+  Bounces once, stays visible
+</div>
 ```
 
 ##### Animation Direction
 ```css
-animate-normal            /* animation-direction: normal */
-animate-reverse           /* animation-direction: reverse */
-animate-alternate         /* animation-direction: alternate */
-animate-alternate-reverse /* animation-direction: alternate-reverse */
+animation-normal          /* play forward (default) */
+animation-reverse         /* play backward */
+animation-alternate       /* alternate direction each cycle */
+animation-alternate-reverse /* alternate starting backward */
+```
+
+**Usage:**
+```html
+<div class="animate-spin animation-reverse">
+  Spins counter-clockwise
+</div>
 ```
 
 ##### Animation Fill Mode
 ```css
-animate-fill-none         /* animation-fill-mode: none */
-animate-fill-forwards     /* animation-fill-mode: forwards */
-animate-fill-backwards    /* animation-fill-mode: backwards */
-animate-fill-both         /* animation-fill-mode: both */
+animation-none            /* don't apply styles outside animation */
+animation-forwards        /* retain final keyframe styles */
+animation-backwards       /* apply initial keyframe styles before start */
+animation-both            /* apply both forwards and backwards */
 ```
 
-##### Animation Name
-```css
-animation-name-*          /* animation-name-spin -> animation-name: spin */
-animation-name-[fade-in]  /* arbitrary */
-animation-name-none       /* reset */
+**Usage:**
+```html
+<div class="animate-bounce animation-once animation-forwards">
+  Bounces once, stays at end position
+</div>
 ```
 
 #### 4. Existing Utilities (No Change)
@@ -114,32 +149,54 @@ animate-none
 
 ### Implementation Details
 
-#### Current State (utilities.ts:4589-4675)
-- `delay` utility: Only sets `transition-delay`
-- `duration` utility: Only sets `transition-duration` + `--tw-duration` CSS var
-- `ease` utility: Only sets `transition-timing-function` + `--tw-ease` CSS var
-- `animate` utility: Sets `animation` shorthand property
+#### Current State (utilities.ts)
+- `delay` utility (line 4589): Only sets `transition-delay`
+- `duration` utility (line 4605): Only sets `transition-duration` + `--tw-duration` CSS var
+- `ease` utility (line 4667): Only sets `transition-timing-function` + `--tw-ease` CSS var
+- `animate` utility (line 3931): Sets `animation` shorthand property
 
-#### Proposed Changes
+#### Changes Made
 
-**1. Modify existing utilities to set both properties:**
+**1. Modified existing utilities to set both properties:**
 ```typescript
-functionalUtility('duration', {
+// delay utility
+functionalUtility('delay', {
   handleBareValue: ({ value }) => {
     if (!isPositiveInteger(value)) return null
     return `${value}ms`
   },
-  themeKeys: ['--transition-duration'],
+  themeKeys: ['--transition-delay'],
   handle: (value) => [
-    durationProperty(),
+    decl('transition-delay', value),
+    decl('animation-delay', value),  // NEW
+  ],
+})
+
+// duration utility
+utilities.functional('duration', (candidate) => {
+  // ... value resolution logic ...
+  return [
+    transitionDurationProperty(),
     decl('--tw-duration', value),
     decl('transition-duration', value),
     decl('animation-duration', value),  // NEW
+  ]
+})
+
+// ease utility
+functionalUtility('ease', {
+  themeKeys: ['--ease'],
+  handle: (value) => [
+    transitionTimingFunctionProperty(),
+    decl('--tw-ease', value),
+    decl('transition-timing-function', value),
+    decl('animation-timing-function', value),  // NEW
   ],
+  // ... staticValues ...
 })
 ```
 
-**2. Add specific utilities:**
+**2. Added specific utilities:**
 ```typescript
 // Transition-specific
 functionalUtility('transition-duration', {
@@ -151,6 +208,9 @@ functionalUtility('transition-duration', {
   handle: (value) => [decl('transition-duration', value)],
 })
 
+functionalUtility('transition-delay', { /* similar */ })
+functionalUtility('transition-ease', { /* similar */ })
+
 // Animation-specific
 functionalUtility('animation-duration', {
   handleBareValue: ({ value }) => {
@@ -160,9 +220,12 @@ functionalUtility('animation-duration', {
   themeKeys: ['--transition-duration'],  // Reuse same theme values
   handle: (value) => [decl('animation-duration', value)],
 })
+
+functionalUtility('animation-delay', { /* similar */ })
+functionalUtility('animation-ease', { /* similar */ })
 ```
 
-**3. Add new animation utilities:**
+**3. Added animation control utilities:**
 ```typescript
 // Animation iteration count
 functionalUtility('animation-count', {
@@ -178,62 +241,102 @@ functionalUtility('animation-count', {
 })
 
 // Shortcuts
-staticUtility('animate-once', [['animation-iteration-count', '1']])
-staticUtility('animate-twice', [['animation-iteration-count', '2']])
-staticUtility('animate-thrice', [['animation-iteration-count', '3']])
-staticUtility('animate-infinite', [['animation-iteration-count', 'infinite']])
+staticUtility('animation-once', [['animation-iteration-count', '1']])
+staticUtility('animation-twice', [['animation-iteration-count', '2']])
+staticUtility('animation-thrice', [['animation-iteration-count', '3']])
+staticUtility('animation-infinite', [['animation-iteration-count', 'infinite']])
 
 // Direction
-staticUtility('animate-normal', [['animation-direction', 'normal']])
-staticUtility('animate-reverse', [['animation-direction', 'reverse']])
-staticUtility('animate-alternate', [['animation-direction', 'alternate']])
-staticUtility('animate-alternate-reverse', [['animation-direction', 'alternate-reverse']])
+staticUtility('animation-normal', [['animation-direction', 'normal']])
+staticUtility('animation-reverse', [['animation-direction', 'reverse']])
+staticUtility('animation-alternate', [['animation-direction', 'alternate']])
+staticUtility('animation-alternate-reverse', [['animation-direction', 'alternate-reverse']])
 
 // Fill mode
-staticUtility('animate-fill-none', [['animation-fill-mode', 'none']])
-staticUtility('animate-fill-forwards', [['animation-fill-mode', 'forwards']])
-staticUtility('animate-fill-backwards', [['animation-fill-mode', 'backwards']])
-staticUtility('animate-fill-both', [['animation-fill-mode', 'both']])
+staticUtility('animation-none', [['animation-fill-mode', 'none']])
+staticUtility('animation-forwards', [['animation-fill-mode', 'forwards']])
+staticUtility('animation-backwards', [['animation-fill-mode', 'backwards']])
+staticUtility('animation-both', [['animation-fill-mode', 'both']])
 ```
+
+### Naming Conventions
+
+**Consistent `animation-*` prefix throughout:**
+- ✅ `animation-count-*`, `animation-once`, `animation-twice`, etc.
+- ✅ `animation-normal`, `animation-reverse`, etc.
+- ✅ `animation-none`, `animation-forwards`, etc.
+- ✅ `animation-duration-*`, `animation-delay-*`, `animation-ease-*`
+
+**Why not `animate-*`?**
+- `animate-*` is reserved for the shorthand property utilities (`animate-spin`, `animate-bounce`)
+- `animation-*` maps directly to CSS properties (`animation-duration`, `animation-direction`, etc.)
+- Provides clear distinction between shorthand (`animate-`) and individual properties (`animation-`)
+
+**Why no `animation-name-*`?**
+- You can't create `@keyframes` inline with utilities
+- Setting name alone isn't useful without keyframes
+- `animate-*` shorthand already handles this
+- Focus is on **customizing** existing animations, not creating new ones
 
 ### Benefits
 
 1. **Intuitive DX**: `duration-300` now works for both transitions AND animations (as users expect)
-2. **Composability**: Mix and match utilities to build complex animations
+2. **Composability**: Mix and match utilities to customize built-in animations
 3. **View Transitions Ready**: Enables elegant View Transitions API support
 4. **Backward Compatible**: Existing code continues to work
 5. **Escape Hatch**: Specific utilities available when needed
+6. **Powerful**: Can now stop animations, reverse them, alternate them, etc.
 
 ### Example Usage
 
 ```html
-<!-- Basic animation with timing utilities -->
-<div class="animate-bounce duration-500 delay-100">
-  Bouncing with custom timing
+<!-- Basic: Customize timing -->
+<div class="animate-spin duration-2000 ease-linear">
+  2-second linear spin
 </div>
 
-<!-- Composing an animation from scratch -->
-<div class="animation-name-fade-in duration-1000 animate-once animate-fill-forwards">
-  Custom animation composition
+<!-- Stop after one cycle -->
+<div class="animate-bounce animation-once animation-forwards">
+  Bounces once, stays visible
+</div>
+
+<!-- Reverse -->
+<div class="animate-spin animation-reverse">
+  Counter-clockwise
+</div>
+
+<!-- Yo-yo effect -->
+<div class="animate-pulse animation-alternate animation-count-4">
+  Pulses in and out 4 times
 </div>
 
 <!-- Different timing for transition vs animation (edge case) -->
-<div class="transition-duration-300 animation-duration-1000 animate-pulse hover:scale-110">
-  Different timing for each
+<div class="animate-pulse hover:scale-110
+            transition-duration-300 animation-duration-1000">
+  Fast transition, slow animation
 </div>
 
-<!-- View Transitions -->
-<div class="vt-name-hero vt-old:duration-300 vt-old:ease-out">
-  Hero element with view transition
-</div>
+<!-- Staggered animations -->
+<div class="animate-fade-in duration-1000 delay-0">Item 1</div>
+<div class="animate-fade-in duration-1000 delay-100">Item 2</div>
+<div class="animate-fade-in duration-1000 delay-200">Item 3</div>
 ```
 
 ### Testing Strategy
 
-1. Unit tests for each new utility
-2. Integration tests for combined utilities
-3. Regression tests for existing transition utilities
-4. View Transitions integration test
+1. Updated existing tests for `duration`, `delay`, `ease` to include animation properties
+2. Added tests for specific `transition-*` utilities
+3. Added tests for specific `animation-*` utilities
+4. Added tests for `animation-count-*` and shortcuts
+5. Added tests for animation direction utilities
+6. Added tests for animation fill mode utilities
+7. Added integration test showing utilities work with `animate-*` classes
+
+All tests include:
+- Named values
+- Arbitrary values
+- Theme integration
+- Negative cases
 
 ### Migration Path
 
@@ -243,9 +346,17 @@ staticUtility('animate-fill-both', [['animation-fill-mode', 'both']])
 
 ### Future Enhancements
 
-1. View Transitions utilities (separate PR)
-2. Animation composition helpers
-3. Keyframe utilities
+This PR enables:
+
+1. **View Transitions API Support** (issue #11669)
+   ```css
+   @utility vt-name-* { view-transition-name: --value(...); }
+   @custom-variant vt-old { ::view-transition-old(*) { @slot; } }
+   @custom-variant vt-new { ::view-transition-new(*) { @slot; } }
+   ```
+
+2. **Keyframe utilities** - When there's a clear use case
+3. **Scroll-Driven Animations** - When the spec stabilizes
 
 ## References
 
@@ -254,3 +365,11 @@ staticUtility('animate-fill-both', [['animation-fill-mode', 'both']])
 - GitHub Issue #16132: https://github.com/tailwindlabs/tailwindcss/issues/16132
 - CSS Animation Spec: https://www.w3.org/TR/css-animations-1/
 - View Transitions API: https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API
+
+## Design Principles Applied
+
+1. **Make the obvious thing work**: `duration-300 animate-spin` should just work
+2. **Composition over configuration**: Combine utilities to build complex animations
+3. **Escape hatches**: Specific utilities for edge cases
+4. **Backward compatibility**: Don't break existing code
+5. **Consistent naming**: Follow CSS property naming conventions

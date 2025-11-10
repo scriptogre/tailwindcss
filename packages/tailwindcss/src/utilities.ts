@@ -4750,31 +4750,22 @@ export function createUtilities(theme: Theme) {
   })
 
   // Animation iteration count shortcuts
-  staticUtility('animate-once', [['animation-iteration-count', '1']])
-  staticUtility('animate-twice', [['animation-iteration-count', '2']])
-  staticUtility('animate-thrice', [['animation-iteration-count', '3']])
-  staticUtility('animate-infinite', [['animation-iteration-count', 'infinite']])
+  staticUtility('animation-once', [['animation-iteration-count', '1']])
+  staticUtility('animation-twice', [['animation-iteration-count', '2']])
+  staticUtility('animation-thrice', [['animation-iteration-count', '3']])
+  staticUtility('animation-infinite', [['animation-iteration-count', 'infinite']])
 
   // Animation direction
-  staticUtility('animate-normal', [['animation-direction', 'normal']])
-  staticUtility('animate-reverse', [['animation-direction', 'reverse']])
-  staticUtility('animate-alternate', [['animation-direction', 'alternate']])
-  staticUtility('animate-alternate-reverse', [['animation-direction', 'alternate-reverse']])
+  staticUtility('animation-normal', [['animation-direction', 'normal']])
+  staticUtility('animation-reverse', [['animation-direction', 'reverse']])
+  staticUtility('animation-alternate', [['animation-direction', 'alternate']])
+  staticUtility('animation-alternate-reverse', [['animation-direction', 'alternate-reverse']])
 
   // Animation fill mode
-  staticUtility('animate-fill-none', [['animation-fill-mode', 'none']])
-  staticUtility('animate-fill-forwards', [['animation-fill-mode', 'forwards']])
-  staticUtility('animate-fill-backwards', [['animation-fill-mode', 'backwards']])
-  staticUtility('animate-fill-both', [['animation-fill-mode', 'both']])
-
-  // Animation name utility
-  functionalUtility('animation-name', {
-    themeKeys: [],
-    handle: (value) => [decl('animation-name', value)],
-    staticValues: {
-      none: [decl('animation-name', 'none')],
-    },
-  })
+  staticUtility('animation-none', [['animation-fill-mode', 'none']])
+  staticUtility('animation-forwards', [['animation-fill-mode', 'forwards']])
+  staticUtility('animation-backwards', [['animation-fill-mode', 'backwards']])
+  staticUtility('animation-both', [['animation-fill-mode', 'both']])
 
   staticUtility('will-change-auto', [['will-change', 'auto']])
   staticUtility('will-change-scroll', [['will-change', 'scroll-position']])

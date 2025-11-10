@@ -23248,23 +23248,23 @@ test('animation-count', async () => {
   expect(await run(['animation-count', 'animation-count-abc', '-animation-count-5'])).toEqual('')
 })
 
-test('animate iteration count shortcuts', async () => {
+test('animation iteration count shortcuts', async () => {
   expect(
-    await run(['animate-once', 'animate-twice', 'animate-thrice', 'animate-infinite']),
+    await run(['animation-once', 'animation-twice', 'animation-thrice', 'animation-infinite']),
   ).toMatchInlineSnapshot(`
-    ".animate-infinite {
+    ".animation-infinite {
       animation-iteration-count: infinite;
     }
 
-    .animate-once {
+    .animation-once {
       animation-iteration-count: 1;
     }
 
-    .animate-thrice {
+    .animation-thrice {
       animation-iteration-count: 3;
     }
 
-    .animate-twice {
+    .animation-twice {
       animation-iteration-count: 2;
     }"
   `)
@@ -23273,25 +23273,25 @@ test('animate iteration count shortcuts', async () => {
 test('animation-direction', async () => {
   expect(
     await run([
-      'animate-normal',
-      'animate-reverse',
-      'animate-alternate',
-      'animate-alternate-reverse',
+      'animation-normal',
+      'animation-reverse',
+      'animation-alternate',
+      'animation-alternate-reverse',
     ]),
   ).toMatchInlineSnapshot(`
-    ".animate-alternate {
+    ".animation-alternate {
       animation-direction: alternate;
     }
 
-    .animate-alternate-reverse {
+    .animation-alternate-reverse {
       animation-direction: alternate-reverse;
     }
 
-    .animate-normal {
+    .animation-normal {
       animation-direction: normal;
     }
 
-    .animate-reverse {
+    .animation-reverse {
       animation-direction: reverse;
     }"
   `)
@@ -23300,47 +23300,95 @@ test('animation-direction', async () => {
 test('animation-fill-mode', async () => {
   expect(
     await run([
-      'animate-fill-none',
-      'animate-fill-forwards',
-      'animate-fill-backwards',
-      'animate-fill-both',
+      'animation-none',
+      'animation-forwards',
+      'animation-backwards',
+      'animation-both',
     ]),
   ).toMatchInlineSnapshot(`
-    ".animate-fill-backwards {
+    ".animation-backwards {
       animation-fill-mode: backwards;
     }
 
-    .animate-fill-both {
+    .animation-both {
       animation-fill-mode: both;
     }
 
-    .animate-fill-forwards {
+    .animation-forwards {
       animation-fill-mode: forwards;
     }
 
-    .animate-fill-none {
+    .animation-none {
       animation-fill-mode: none;
     }"
   `)
 })
 
-test('animation-name', async () => {
+test('animation utilities augment animate-* classes', async () => {
+  // Test that duration-*, delay-*, ease-* work with animate-* classes
   expect(
-    await run(['animation-name-spin', 'animation-name-none', 'animation-name-[fade-in]']),
+    await run([
+      'animate-spin',
+      'duration-1000',
+      'delay-500',
+      'ease-in-out',
+      'animation-once',
+      'animation-reverse',
+      'animation-forwards',
+    ]),
   ).toMatchInlineSnapshot(`
-    ".animation-name-\\[fade-in\\] {
-      animation-name: fade-in;
+    "@layer properties {
+      @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+        *, :before, :after, ::backdrop {
+          --tw-duration: initial;
+          --tw-ease: initial;
+        }
+      }
     }
 
-    .animation-name-none {
-      animation-name: none;
+    .animate-spin {
+      animation: var(--animate-spin);
     }
 
-    .animation-name-spin {
-      animation-name: spin;
+    .animation-forwards {
+      animation-fill-mode: forwards;
+    }
+
+    .animation-once {
+      animation-iteration-count: 1;
+    }
+
+    .animation-reverse {
+      animation-direction: reverse;
+    }
+
+    .delay-500 {
+      transition-delay: .5s;
+      animation-delay: .5s;
+    }
+
+    .duration-1000 {
+      --tw-duration: 1s;
+      transition-duration: 1s;
+      animation-duration: 1s;
+    }
+
+    .ease-in-out {
+      --tw-ease: cubic-bezier(.4, 0, .2, 1);
+      transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+      animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+    }
+
+    @property --tw-duration {
+      syntax: "*";
+      inherits: false
+    }
+
+    @property --tw-ease {
+      syntax: "*";
+      inherits: false
     }"
   `)
-  expect(await run(['animation-name', '-animation-name-spin'])).toEqual('')
 })
 
 test('will-change', async () => {
