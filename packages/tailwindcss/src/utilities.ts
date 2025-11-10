@@ -4592,7 +4592,10 @@ export function createUtilities(theme: Theme) {
         return `${value}ms`
       },
       themeKeys: ['--transition-delay'],
-      handle: (value) => [decl('transition-delay', value)],
+      handle: (value) => [
+        decl('transition-delay', value),
+        decl('animation-delay', value),
+      ],
     })
 
     {
@@ -4600,7 +4603,11 @@ export function createUtilities(theme: Theme) {
         return atRoot([property('--tw-duration')])
       }
 
-      staticUtility('duration-initial', [transitionDurationProperty, ['--tw-duration', 'initial']])
+      staticUtility('duration-initial', [
+        transitionDurationProperty,
+        ['--tw-duration', 'initial'],
+        ['animation-duration', 'initial'],
+      ])
 
       utilities.functional('duration', (candidate) => {
         // This utility doesn't support modifiers.
@@ -4632,6 +4639,7 @@ export function createUtilities(theme: Theme) {
           transitionDurationProperty(),
           decl('--tw-duration', value),
           decl('transition-duration', value),
+          decl('animation-duration', value),
         ]
       })
     }
@@ -4662,17 +4670,111 @@ export function createUtilities(theme: Theme) {
         transitionTimingFunctionProperty(),
         decl('--tw-ease', value),
         decl('transition-timing-function', value),
+        decl('animation-timing-function', value),
       ],
       staticValues: {
-        initial: [transitionTimingFunctionProperty(), decl('--tw-ease', 'initial')],
+        initial: [
+          transitionTimingFunctionProperty(),
+          decl('--tw-ease', 'initial'),
+          decl('animation-timing-function', 'initial'),
+        ],
         linear: [
           transitionTimingFunctionProperty(),
           decl('--tw-ease', 'linear'),
           decl('transition-timing-function', 'linear'),
+          decl('animation-timing-function', 'linear'),
         ],
       },
     })
   }
+
+  // Specific transition utilities (for edge cases where different timing needed)
+  functionalUtility('transition-duration', {
+    handleBareValue: ({ value }) => {
+      if (!isPositiveInteger(value)) return null
+      return `${value}ms`
+    },
+    themeKeys: ['--transition-duration'],
+    handle: (value) => [decl('transition-duration', value)],
+  })
+
+  functionalUtility('transition-delay', {
+    handleBareValue: ({ value }) => {
+      if (!isPositiveInteger(value)) return null
+      return `${value}ms`
+    },
+    themeKeys: ['--transition-delay'],
+    handle: (value) => [decl('transition-delay', value)],
+  })
+
+  functionalUtility('transition-ease', {
+    themeKeys: ['--ease'],
+    handle: (value) => [decl('transition-timing-function', value)],
+  })
+
+  // Specific animation utilities (for edge cases where different timing needed)
+  functionalUtility('animation-duration', {
+    handleBareValue: ({ value }) => {
+      if (!isPositiveInteger(value)) return null
+      return `${value}ms`
+    },
+    themeKeys: ['--transition-duration'],
+    handle: (value) => [decl('animation-duration', value)],
+  })
+
+  functionalUtility('animation-delay', {
+    handleBareValue: ({ value }) => {
+      if (!isPositiveInteger(value)) return null
+      return `${value}ms`
+    },
+    themeKeys: ['--transition-delay'],
+    handle: (value) => [decl('animation-delay', value)],
+  })
+
+  functionalUtility('animation-ease', {
+    themeKeys: ['--ease'],
+    handle: (value) => [decl('animation-timing-function', value)],
+  })
+
+  // Animation-specific utilities
+  functionalUtility('animation-count', {
+    handleBareValue: ({ value }) => {
+      if (!isPositiveInteger(value)) return null
+      return value
+    },
+    themeKeys: [],
+    handle: (value) => [decl('animation-iteration-count', value)],
+    staticValues: {
+      infinite: [decl('animation-iteration-count', 'infinite')],
+    },
+  })
+
+  // Animation iteration count shortcuts
+  staticUtility('animate-once', [['animation-iteration-count', '1']])
+  staticUtility('animate-twice', [['animation-iteration-count', '2']])
+  staticUtility('animate-thrice', [['animation-iteration-count', '3']])
+  staticUtility('animate-infinite', [['animation-iteration-count', 'infinite']])
+
+  // Animation direction
+  staticUtility('animate-normal', [['animation-direction', 'normal']])
+  staticUtility('animate-reverse', [['animation-direction', 'reverse']])
+  staticUtility('animate-alternate', [['animation-direction', 'alternate']])
+  staticUtility('animate-alternate-reverse', [['animation-direction', 'alternate-reverse']])
+
+  // Animation fill mode
+  staticUtility('animate-fill-none', [['animation-fill-mode', 'none']])
+  staticUtility('animate-fill-forwards', [['animation-fill-mode', 'forwards']])
+  staticUtility('animate-fill-backwards', [['animation-fill-mode', 'backwards']])
+  staticUtility('animate-fill-both', [['animation-fill-mode', 'both']])
+
+  // Animation name utility
+  functionalUtility('animation-name', {
+    themeKeys: [],
+    handle: (value) => [decl('animation-name', value)],
+    staticValues: {
+      none: [decl('animation-name', 'none')],
+    },
+  })
 
   staticUtility('will-change-auto', [['will-change', 'auto']])
   staticUtility('will-change-scroll', [['will-change', 'scroll-position']])

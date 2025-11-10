@@ -22951,14 +22951,17 @@ test('delay', async () => {
   expect(await run(['delay-123', 'delay-200', 'delay-[300ms]'])).toMatchInlineSnapshot(`
     ".delay-123 {
       transition-delay: .123s;
+      animation-delay: .123s;
     }
 
     .delay-200 {
       transition-delay: .2s;
+      animation-delay: .2s;
     }
 
     .delay-\\[300ms\\] {
       transition-delay: .3s;
+      animation-delay: .3s;
     }"
   `)
   expect(
@@ -22988,16 +22991,19 @@ test('duration', async () => {
     .duration-123 {
       --tw-duration: .123s;
       transition-duration: .123s;
+      animation-duration: .123s;
     }
 
     .duration-200 {
       --tw-duration: .2s;
       transition-duration: .2s;
+      animation-duration: .2s;
     }
 
     .duration-\\[300ms\\] {
       --tw-duration: .3s;
       transition-duration: .3s;
+      animation-duration: .3s;
     }
 
     @property --tw-duration {
@@ -23047,16 +23053,19 @@ test('ease', async () => {
     .ease-\\[var\\(--value\\)\\] {
       --tw-ease: var(--value);
       transition-timing-function: var(--value);
+      animation-timing-function: var(--value);
     }
 
     .ease-in {
       --tw-ease: var(--ease-in);
       transition-timing-function: var(--ease-in);
+      animation-timing-function: var(--ease-in);
     }
 
     .ease-out {
       --tw-ease: var(--ease-out);
       transition-timing-function: var(--ease-out);
+      animation-timing-function: var(--ease-out);
     }
 
     @property --tw-ease {
@@ -23101,6 +23110,7 @@ test('ease', async () => {
     .ease-linear {
       --tw-ease: var(--ease-linear);
       transition-timing-function: var(--ease-linear);
+      animation-timing-function: var(--ease-linear);
     }
 
     @property --tw-ease {
@@ -23108,6 +23118,229 @@ test('ease', async () => {
       inherits: false
     }"
   `)
+})
+
+test('transition-duration (specific)', async () => {
+  expect(await run(['transition-duration-300', 'transition-duration-[500ms]'])).toMatchInlineSnapshot(`
+    ".transition-duration-300 {
+      transition-duration: .3s;
+    }
+
+    .transition-duration-\\[500ms\\] {
+      transition-duration: .5s;
+    }"
+  `)
+})
+
+test('transition-delay (specific)', async () => {
+  expect(await run(['transition-delay-100', 'transition-delay-[200ms]'])).toMatchInlineSnapshot(`
+    ".transition-delay-100 {
+      transition-delay: .1s;
+    }
+
+    .transition-delay-\\[200ms\\] {
+      transition-delay: .2s;
+    }"
+  `)
+})
+
+test('transition-ease (specific)', async () => {
+  expect(
+    await compileCss(
+      css`
+        @theme {
+          --ease-in: cubic-bezier(0.4, 0, 1, 1);
+        }
+        @tailwind utilities;
+      `,
+      ['transition-ease-in', 'transition-ease-[ease-out]'],
+    ),
+  ).toMatchInlineSnapshot(`
+    ":root, :host {
+      --ease-in: cubic-bezier(.4, 0, 1, 1);
+    }
+
+    .transition-ease-\\[ease-out\\] {
+      transition-timing-function: ease-out;
+    }
+
+    .transition-ease-in {
+      transition-timing-function: var(--ease-in);
+    }"
+  `)
+})
+
+test('animation-duration (specific)', async () => {
+  expect(await run(['animation-duration-300', 'animation-duration-[500ms]'])).toMatchInlineSnapshot(`
+    ".animation-duration-300 {
+      animation-duration: .3s;
+    }
+
+    .animation-duration-\\[500ms\\] {
+      animation-duration: .5s;
+    }"
+  `)
+})
+
+test('animation-delay (specific)', async () => {
+  expect(await run(['animation-delay-100', 'animation-delay-[200ms]'])).toMatchInlineSnapshot(`
+    ".animation-delay-100 {
+      animation-delay: .1s;
+    }
+
+    .animation-delay-\\[200ms\\] {
+      animation-delay: .2s;
+    }"
+  `)
+})
+
+test('animation-ease (specific)', async () => {
+  expect(
+    await compileCss(
+      css`
+        @theme {
+          --ease-in: cubic-bezier(0.4, 0, 1, 1);
+        }
+        @tailwind utilities;
+      `,
+      ['animation-ease-in', 'animation-ease-[ease-out]'],
+    ),
+  ).toMatchInlineSnapshot(`
+    ":root, :host {
+      --ease-in: cubic-bezier(.4, 0, 1, 1);
+    }
+
+    .animation-ease-\\[ease-out\\] {
+      animation-timing-function: ease-out;
+    }
+
+    .animation-ease-in {
+      animation-timing-function: var(--ease-in);
+    }"
+  `)
+})
+
+test('animation-count', async () => {
+  expect(
+    await run([
+      'animation-count-1',
+      'animation-count-5',
+      'animation-count-infinite',
+      'animation-count-[10]',
+    ]),
+  ).toMatchInlineSnapshot(`
+    ".animation-count-1 {
+      animation-iteration-count: 1;
+    }
+
+    .animation-count-5 {
+      animation-iteration-count: 5;
+    }
+
+    .animation-count-\\[10\\] {
+      animation-iteration-count: 10;
+    }
+
+    .animation-count-infinite {
+      animation-iteration-count: infinite;
+    }"
+  `)
+  expect(await run(['animation-count', 'animation-count-abc', '-animation-count-5'])).toEqual('')
+})
+
+test('animate iteration count shortcuts', async () => {
+  expect(
+    await run(['animate-once', 'animate-twice', 'animate-thrice', 'animate-infinite']),
+  ).toMatchInlineSnapshot(`
+    ".animate-infinite {
+      animation-iteration-count: infinite;
+    }
+
+    .animate-once {
+      animation-iteration-count: 1;
+    }
+
+    .animate-thrice {
+      animation-iteration-count: 3;
+    }
+
+    .animate-twice {
+      animation-iteration-count: 2;
+    }"
+  `)
+})
+
+test('animation-direction', async () => {
+  expect(
+    await run([
+      'animate-normal',
+      'animate-reverse',
+      'animate-alternate',
+      'animate-alternate-reverse',
+    ]),
+  ).toMatchInlineSnapshot(`
+    ".animate-alternate {
+      animation-direction: alternate;
+    }
+
+    .animate-alternate-reverse {
+      animation-direction: alternate-reverse;
+    }
+
+    .animate-normal {
+      animation-direction: normal;
+    }
+
+    .animate-reverse {
+      animation-direction: reverse;
+    }"
+  `)
+})
+
+test('animation-fill-mode', async () => {
+  expect(
+    await run([
+      'animate-fill-none',
+      'animate-fill-forwards',
+      'animate-fill-backwards',
+      'animate-fill-both',
+    ]),
+  ).toMatchInlineSnapshot(`
+    ".animate-fill-backwards {
+      animation-fill-mode: backwards;
+    }
+
+    .animate-fill-both {
+      animation-fill-mode: both;
+    }
+
+    .animate-fill-forwards {
+      animation-fill-mode: forwards;
+    }
+
+    .animate-fill-none {
+      animation-fill-mode: none;
+    }"
+  `)
+})
+
+test('animation-name', async () => {
+  expect(
+    await run(['animation-name-spin', 'animation-name-none', 'animation-name-[fade-in]']),
+  ).toMatchInlineSnapshot(`
+    ".animation-name-\\[fade-in\\] {
+      animation-name: fade-in;
+    }
+
+    .animation-name-none {
+      animation-name: none;
+    }
+
+    .animation-name-spin {
+      animation-name: spin;
+    }"
+  `)
+  expect(await run(['animation-name', '-animation-name-spin'])).toEqual('')
 })
 
 test('will-change', async () => {
